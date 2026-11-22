@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block titulo %}Painel{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Painel</h1><p>Posição do estoque, itens no limite e os últimos lançamentos.</p></div>
+  <div class="barra" style="margin:0">
+    {% if pode('movimentar') %}
+      <a class="btn" href="{{ url_for('operacao', modo='entrada') }}">Nova entrada</a>
+      <a class="btn perigo" href="{{ url_for('operacao', modo='saida') }}">Nova saída</a>
+    {% endif %}
+    {% if pode('editar_cadastro') %}<a class="btn sec" href="{{ url_for('produto_novo') }}">Novo produto</a>{% endif %}
+    {% if pode('sistema') %}
+      <form method="post" action="{{ url_for('backup') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="btn sec" type="submit">Baixar backup</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grade-cards">
+  <div class="card kpi">
+    <div class="rotulo">Produtos ativos</div>
+    <div class="valor">{{ resumo.ativos | inteiro }}</div>
+    <div class="sub">{% if resumo.inativos %}{{ resumo.inativos | inteiro }} inativo{{ 's' if resumo.inativos != 1 }}{% else %}cadastros em uso{% endif %}</div>
+  </div>
+  <div class="card kpi">
+    <div class="rotulo">Quantidade em estoque</div>
+    <div class="valor">{{ resumo.unidades | qty }}</div>
+    <div class="sub">soma dos produtos ativos</div>
+  </div>
+  <div class="card kpi">
+    <div class="rotulo">Em atenção</div>
+    <div class="valor {{ 'alerta' if resumo.atencao else 'bom' }}">{{ resumo.atencao | inteiro }}</div>
+    <div class="sub">no mínimo ou zerados</div>
+  </div>
+  <div class="card kpi">
+    <div class="rotulo">Valor de custo</div>
+    <div class="valor">{{ resumo.valor_custo | money }}</div>
+    <div class="sub">Venda potencial {{ resumo.valor_venda | money }}</div>
+  </div>
+</div>
+
+{% if resumo.ativos == 0 and resumo.inativos == 0 %}
+<div class="card">
+  <h2>Comece pelo cadastro</h2>
+  <p>Cadastre um produto com código, preço e estoque mínimo. Se a mercadoria já está no depósito, informe a
+     quantidade inicial: isso gera a primeira entrada. Depois use Entrada, Saída e Ajuste.</p>
+  <div class="barra">
+    {% if pode('editar_cadastro') %}<a class="btn" href="{{ url_for('produto_novo') }}">Cadastrar produto</a>{% endif %}
+    {% if pode('sistema') %}
+      <form method="post" action="{{ url_for('carregar_exemplo') }}"
+            data-confirma="Isso cria fornecedores, produtos e alguns lançamentos para demonstração. Continuar?">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="btn sec" type="submit">Carregar exemplo</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="duas-colunas">
+  <div class="card">
+    <div class="barra" style="margin-top:0"><h2 style="margin:0">Produtos em atenção</h2>
+      <div class="direita"><a class="btn sec pequeno" href="{{ url_for('produtos', atencao=1) }}">Ver</a></div></div>
+    {% if resumo.alertas %}
+    <div class="tabela-wrap"><table>
+      <thead><tr><th>Código</th><th>Produto</th><th class="num">Estoque</th><th class="num">Mín.</th><th>Situação</th><th></th></tr></thead>
+      <tbody>
+      {% for p in resumo.alertas[:12] %}
+        {% set falta = p.estoque_minimo - p.quantidade %}
+        <tr class="alerta">
+          <td>{{ p.codigo }}</td><td>{{ p.nome }}</td>
+          <td class="num">{{ p.quantidade | qty }}</td><td class="num">{{ p.estoque_minimo | qty }}</td>
+          <td>{% if p.quantidade <= 0 %}zerado{% elif falta <= 0 %}no limite{% else %}faltam {{ falta | qty }}{% endif %}</td>
+          <td class="acoes">{% if pode('movimentar') %}<a class="btn sec pequeno" href="{{ url_for('operacao', modo='entrada', produto=p.id) }}">Entrada</a>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="vazio">Nenhum produto no limite do estoque.</p>{% endif %}
+  </div>
+  <div class="card">
+    <div class="barra" style="margin-top:0"><h2 style="margin:0">Últimos lançamentos</h2>
+      <div class="direita"><a class="btn sec pequeno" href="{{ url_for('movimentos') }}">Ver</a></div></div>
+    {% if resumo.recentes %}
+    <div class="tabela-wrap"><table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th class="num">Qtd.</th><th>Por</th></tr></thead>
+      <tbody>
+      {% for m in resumo.recentes %}
+        <tr>
+          <td><a href="{{ url_for('movimento', movimento_id=m.id) }}">{{ (m.criado_em | dt)[:5] }} {{ (m.criado_em | dt)[11:] }}</a></td>
+          <td class="tipo-{{ 'estornado' if m.estornado else ('ajuste' if m.estorno_de else m.tipo) }}">{{ m | tipo }}</td>
+          <td>{{ m.produto_nome }}</td>
+          <td class="num">{{ m.quantidade | delta }}</td>
+          <td>{{ (m.usuario_email or '—').split('@')[0] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="vazio">Nenhum lançamento ainda.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

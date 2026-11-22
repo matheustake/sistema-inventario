@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titulo %}Lançamento #{{ mov.id }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Lançamento #{{ mov.id }} · {{ mov | tipo }}</h1><p>{{ mov.produto_codigo }} · {{ mov.produto_nome }}</p></div>
+  <a class="btn sec" href="{{ url_for('movimentos') }}">Voltar</a>
+</div>
+
+<div class="card detalhe">
+  <dl>
+    <dt>Data</dt><dd>{{ mov.criado_em | dt }}</dd>
+    <dt>Registrado por</dt><dd>{{ mov.usuario_email or '— (antes do controle de usuários)' }}</dd>
+    <dt>Quantidade</dt><dd>{{ mov.quantidade | delta }} {{ mov.produto_unidade }}</dd>
+    <dt>Saldo</dt><dd>{{ mov.quantidade_anterior | qty }} → {{ mov.quantidade_posterior | qty }} {{ mov.produto_unidade }}</dd>
+    <dt>Custo médio</dt><dd>{{ mov.custo_anterior | money }} → {{ mov.custo_posterior | money }}</dd>
+    {% if mov.custo_unitario is not none %}<dt>Custo unitário</dt><dd>{{ mov.custo_unitario | money }}</dd>{% endif %}
+    {% if mov.motivo %}<dt>Motivo</dt><dd>{{ mov.motivo }}</dd>{% endif %}
+    {% if mov.fornecedor_nome %}<dt>Fornecedor</dt><dd>{{ mov.fornecedor_nome }}</dd>{% endif %}
+    {% if mov.destino %}<dt>Destino</dt><dd>{{ mov.destino }}</dd>{% endif %}
+    {% if mov.documento %}<dt>Documento</dt><dd>{{ mov.documento }}</dd>{% endif %}
+    {% if mov.estorno_de %}<dt>Estorna</dt><dd><a href="{{ url_for('movimento', movimento_id=mov.estorno_de) }}">Lançamento #{{ mov.estorno_de }}</a></dd>{% endif %}
+    {% if mov.observacao %}<dt>Observação</dt><dd>{{ mov.observacao }}</dd>{% endif %}
+  </dl>
+</div>
+
+{% if pode('estornar') and not mov.estornado and not mov.estorno_de %}
+<form class="barra" method="post" action="{{ url_for('estornar', movimento_id=mov.id) }}"
+      data-confirma="Estornar o lançamento #{{ mov.id }}? O saldo de {{ mov.produto_nome }} voltará para {{ mov.quantidade_anterior | qty }} {{ mov.produto_unidade }}. Só é permitido se este for o último lançamento do produto.">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <button class="btn perigo" type="submit">Estornar lançamento</button>
+</form>
+{% endif %}
+{% endblock %}

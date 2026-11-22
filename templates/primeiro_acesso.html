@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titulo %}Primeiro acesso{% endblock %}
+{% block publico %}
+<div class="tela-login"><div class="card">
+  <h1>Primeiro acesso</h1>
+  <p>Crie o <strong>Superadmin</strong>: a pessoa que cadastra as outras e define o perfil de cada uma.
+     Esta tela só aparece uma vez.</p>
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="mensagem {{ categoria }}" role="status">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+  <form method="post" action="{{ url_for('primeiro_acesso') }}" class="form-login">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="campo"><label for="email">E-mail</label>
+      <input type="email" id="email" name="email" value="{{ form.email }}" required autocomplete="username"></div>
+    <div class="campo"><label for="nome">Nome</label>
+      <input type="text" id="nome" name="nome" value="{{ form.nome }}" maxlength="120" autocomplete="name"></div>
+    <div class="campo"><label for="senha">Senha (mínimo {{ senha_minima }} caracteres)</label>
+      <input type="password" id="senha" name="senha" required minlength="{{ senha_minima }}" autocomplete="new-password" autofocus></div>
+    <div class="campo"><label for="confirmacao">Repita a senha</label>
+      <input type="password" id="confirmacao" name="confirmacao" required minlength="{{ senha_minima }}" autocomplete="new-password"></div>
+    <button class="btn largo" type="submit">Criar superadmin e entrar</button>
+  </form>
+</div></div>
+{% endblock %}

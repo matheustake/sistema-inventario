@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>{{ titulo }}</h1><p>{{ mensagem }}</p></div></div>
+<a class="btn sec" href="{{ url_for('painel') }}">Voltar ao painel</a>
+{% endblock %}
+{% block publico %}
+<div class="tela-login"><div class="card">
+  <h1>{{ titulo }}</h1>
+  <p>{{ mensagem }}</p>
+  <a class="btn sec" href="{{ url_for('login') }}">Ir para o login</a>
+</div></div>
+{% endblock %}

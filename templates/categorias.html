@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Categorias{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Categorias</h1><p>Organize os produtos. Uma categoria em uso precisa ser trocada nos produtos antes da exclusão.</p></div>
+</div>
+
+{% if pode('editar_cadastro') %}
+<form class="card filtros" method="post" action="{{ url_for('categoria_salvar') }}" style="margin-bottom:12px">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="campo cresce"><label for="nova">Nova categoria</label>
+    <input type="text" id="nova" name="nome" required maxlength="60"></div>
+  <button class="btn" type="submit">Adicionar</button>
+</form>
+{% endif %}
+
+<div class="tabela-wrap"><table>
+  <thead><tr><th>Categoria</th><th class="num">Produtos</th><th></th></tr></thead>
+  <tbody>
+  {% for c in categorias %}
+    <tr>
+      <td>
+        {% if pode('editar_cadastro') %}
+          <form class="filtros" method="post" action="{{ url_for('categoria_salvar') }}">
+            <input type="hidden" name="csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="id" value="{{ c.id }}">
+            <input type="text" name="nome" value="{{ c.nome }}" required maxlength="60" aria-label="Nome da categoria" style="max-width:320px">
+            <button class="btn sec pequeno" type="submit">Renomear</button>
+          </form>
+        {% else %}{{ c.nome }}{% endif %}
+      </td>
+      <td class="num">{{ c.total_produtos | inteiro }}</td>
+      <td class="acoes">
+        {% if pode('excluir_cadastro') %}
+          <form method="post" action="{{ url_for('categoria_excluir', categoria_id=c.id) }}" data-confirma="Excluir a categoria {{ c.nome }}?">
+            <input type="hidden" name="csrf" value="{{ csrf_token }}">
+            <button class="btn perigo pequeno" type="submit">Excluir</button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="3" class="vazio">Nenhuma categoria.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

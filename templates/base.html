@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Estoque{% endblock %} · Estoque</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-versao="{{ versao_dados }}">
+{% macro nav(endpoint, rotulo, badge=0) -%}
+  {%- set ativo = pagina == endpoint and (not kwargs or request.view_args == kwargs) -%}
+  <a class="nav-link{% if ativo %} ativo{% endif %}" href="{{ url_for(endpoint, **kwargs) }}">
+    <span>{{ rotulo }}</span>{% if badge %}<span class="badge">{{ badge }}</span>{% endif %}
+  </a>
+{%- endmacro %}
+{% if usuario %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="marca"><strong>ESTOQUE</strong><span>Controle de mercadorias</span></div>
+    <nav>
+      <p class="secao">Principal</p>
+      {{ nav('painel', 'Painel', atencao_total) }}
+      {{ nav('produtos', 'Produtos') }}
+      {% if pode('movimentar') %}
+      <p class="secao">Operações</p>
+      {{ nav('operacao', 'Entrada', modo='entrada') }}
+      {{ nav('operacao', 'Saída', modo='saida') }}
+      {{ nav('operacao', 'Ajuste', modo='ajuste') }}
+      {% endif %}
+      <p class="secao">Consulta</p>
+      {{ nav('movimentos', 'Movimentações') }}
+      {% if pode('ver_atividades') %}{{ nav('atividades', 'Atividades') }}{% endif %}
+      <p class="secao">Cadastros</p>
+      {{ nav('fornecedores', 'Fornecedores') }}
+      {{ nav('categorias', 'Categorias') }}
+      {% if pode('gerenciar_usuarios') %}
+      <p class="secao">Administração</p>
+      {{ nav('usuarios', 'Usuários') }}
+      {% endif %}
+    </nav>
+    <div class="quem">
+      <div class="email">{{ usuario.nome or usuario.email }}</div>
+      {% if usuario.nome %}<div style="color:#94a3b8">{{ usuario.email }}</div>{% endif %}
+      <span class="perfil-tag perfil-{{ usuario.perfil }}">{{ usuario.perfil | perfil }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="btn fantasma pequeno" type="submit">Sair</button>
+      </form>
+      <div style="color:#64748b;font-size:11px;margin-top:10px">Versão {{ versao_app }}</div>
+    </div>
+  </aside>
+  <main class="conteudo">
+    <div class="topo">
+      <span>Conectado como <strong>{{ usuario.nome or usuario.email }}</strong></span>
+      <span class="perfil-tag perfil-{{ usuario.perfil }}" title="{{ descricao_perfil }}">{{ usuario.perfil | perfil }}</span>
+      <a href="{{ url_for('conta') }}">Minha conta</a>
+    </div>
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, texto in mensagens %}
+        <div class="mensagem {{ categoria }}" role="status">{{ texto }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+  </main>
+</div>
+<div class="novidades" id="novidades" role="status">
+  <span>Outra pessoa alterou o estoque.</span>
+  <button class="btn pequeno" type="button">Atualizar</button>
+</div>
+{% else %}
+  {% block publico %}{% endblock %}
+{% endif %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

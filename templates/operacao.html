@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>{{ titulo }}</h1><p>{{ subtitulo }}</p></div></div>
+
+{% set texto_botao = {'entrada': 'Confirmar entrada', 'saida': 'Confirmar saída', 'ajuste': 'Confirmar ajuste'}[modo] %}
+{% set cor_botao = {'entrada': '', 'saida': 'perigo', 'ajuste': 'aviso'}[modo] %}
+
+<form class="card" method="post" id="form-operacao" data-modo="{{ modo }}"
+      data-confirma="Confirmar este lançamento?">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="campos">
+    <div class="campo">
+      <label for="busca-produto">Buscar produto</label>
+      <input type="search" id="busca-produto" placeholder="Código ou nome" autocomplete="off">
+    </div>
+    <div class="campo">
+      <label for="produto_id">Produto ativo</label>
+      <select id="produto_id" name="produto_id" required>
+        <option value="">Selecione…</option>
+        {% for p in produtos %}
+          <option value="{{ p.id }}" {{ 'selected' if form.produto_id|string == p.id|string }}
+                  data-saldo="{{ p.quantidade }}" data-custo="{{ p.custo }}" data-minimo="{{ p.estoque_minimo }}"
+                  data-unidade="{{ p.unidade }}" data-custo-texto="{{ p.custo | input_money }}"
+                  data-saldo-texto="{{ p.quantidade | input_qty }}">
+            {{ p.codigo }} · {{ p.nome }} ({{ p.quantidade | qty }} {{ p.unidade }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <p class="dica" id="info-produto" style="margin:0 0 14px">Selecione um produto.</p>
+
+  <div class="campos">
+    <div class="campo">
+      <label for="quantidade">{{ 'Quantidade contada' if modo == 'ajuste' else 'Quantidade' }}</label>
+      <input type="text" id="quantidade" name="quantidade" value="{{ form.quantidade }}" inputmode="decimal" required>
+    </div>
+    {% if modo == 'entrada' %}
+    <div class="campo">
+      <label for="custo">Custo unitário desta entrada</label>
+      <input type="text" id="custo" name="custo" value="{{ form.custo }}" inputmode="decimal">
+    </div>
+    {% endif %}
+    <div class="campo">
+      <label for="motivo">Motivo</label>
+      <select id="motivo" name="motivo">
+        {% for m in motivos %}<option {{ 'selected' if form.motivo == m }}>{{ m }}</option>{% endfor %}
+      </select>
+    </div>
+    {% if modo == 'entrada' %}
+    <div class="campo">
+      <label for="fornecedor_id">Fornecedor</label>
+      <select id="fornecedor_id" name="fornecedor_id">
+        <option value="">Não informar</option>
+        {% for f in fornecedores %}<option value="{{ f.id }}" {{ 'selected' if form.fornecedor_id|string == f.id|string }}>{{ f.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% if modo == 'saida' %}
+    <div class="campo">
+      <label for="destino">Destino ou cliente</label>
+      <input type="text" id="destino" name="destino" value="{{ form.destino }}" maxlength="120">
+    </div>
+    {% endif %}
+    <div class="campo">
+      <label for="documento">Nº do documento (NF, pedido)</label>
+      <input type="text" id="documento" name="documento" value="{{ form.documento }}" maxlength="40">
+    </div>
+    <div class="campo">
+      <label for="data">Data</label>
+      <input type="date" id="data" name="data" value="{{ form.data }}" max="{{ hoje }}" min="2000-01-01">
+    </div>
+    <div class="campo campo-largo">
+      <label for="observacao">Observação</label>
+      <textarea id="observacao" name="observacao" maxlength="1000">{{ form.observacao }}</textarea>
+      <p class="dica">Obrigatória quando o motivo for “Outro”.</p>
+    </div>
+  </div>
+
+  <div id="previa" class="previa">Escolha o produto e informe a quantidade.</div>
+  <div class="barra"><button class="btn {{ cor_botao }}" type="submit">{{ texto_botao }}</button></div>
+</form>
+{% endblock %}

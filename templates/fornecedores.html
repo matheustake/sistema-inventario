@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block titulo %}Fornecedores{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Fornecedores</h1><p>Usados nas entradas. Se um fornecedor for excluído, o histórico permanece.</p></div>
+  {% if pode('editar_cadastro') and atual %}<a class="btn" href="{{ url_for('fornecedores') }}">Novo fornecedor</a>{% endif %}
+</div>
+
+<div class="lado-a-lado">
+  <div>
+    <form class="card filtros" method="get" action="{{ url_for('fornecedores') }}" style="margin-bottom:12px">
+      <div class="campo cresce"><label for="busca">Buscar</label>
+        <input type="search" id="busca" name="busca" value="{{ busca }}"></div>
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+    <div class="tabela-wrap"><table>
+      <thead><tr><th>Nome</th><th>Contato</th><th>Telefone</th><th>E-mail</th></tr></thead>
+      <tbody>
+      {% for f in fornecedores %}
+        <tr>
+          <td><a href="{{ url_for('fornecedores', id=f.id, busca=busca or None) }}">{{ f.nome }}</a></td>
+          <td>{{ f.contato or '—' }}</td><td>{{ f.telefone or '—' }}</td><td>{{ f.email or '—' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4" class="vazio">Nenhum fornecedor cadastrado.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    {% if pode('editar_cadastro') %}
+      <h2>{{ 'Editar fornecedor' if form.id else 'Novo fornecedor' }}</h2>
+      <form method="post" action="{{ url_for('fornecedor_salvar') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        {% if form.id %}<input type="hidden" name="id" value="{{ form.id }}">{% endif %}
+        <div class="campo"><label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" value="{{ form.nome or '' }}" required maxlength="120"></div>
+        <div class="campo"><label for="contato">Contato</label>
+          <input type="text" id="contato" name="contato" value="{{ form.contato or '' }}" maxlength="80"></div>
+        <div class="campo"><label for="telefone">Telefone</label>
+          <input type="text" id="telefone" name="telefone" value="{{ form.telefone or '' }}" maxlength="30"></div>
+        <div class="campo"><label for="email">E-mail</label>
+          <input type="text" id="email" name="email" value="{{ form.email or '' }}" maxlength="120"></div>
+        <div class="campo"><label for="observacao">Observação</label>
+          <textarea id="observacao" name="observacao" maxlength="500">{{ form.observacao or '' }}</textarea></div>
+        <button class="btn" type="submit">Salvar</button>
+      </form>
+    {% elif atual %}
+      <h2>{{ atual.nome }}</h2>
+      <div class="detalhe"><dl>
+        <dt>Contato</dt><dd>{{ atual.contato or '—' }}</dd>
+        <dt>Telefone</dt><dd>{{ atual.telefone or '—' }}</dd>
+        <dt>E-mail</dt><dd>{{ atual.email or '—' }}</dd>
+        <dt>Observação</dt><dd>{{ atual.observacao or '—' }}</dd>
+      </dl></div>
+    {% else %}
+      <p class="dica">Selecione um fornecedor para ver os detalhes.</p>
+    {% endif %}
+    {% if atual and pode('excluir_cadastro') %}
+      <form class="barra" method="post" action="{{ url_for('fornecedor_excluir', fornecedor_id=atual.id) }}"
+            data-confirma="Excluir {{ atual.nome }}? Os lançamentos antigos permanecem, sem o vínculo com este fornecedor.">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="btn perigo" type="submit">Excluir fornecedor</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

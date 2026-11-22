@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Usuários</h1>
+    <p>Só quem está nesta lista entra no sistema. Cadastre a pessoa com uma senha inicial e passe para ela;
+       depois ela pode trocar em "Minha conta". Mudanças valem na hora.</p></div>
+</div>
+
+<form class="card filtros" method="post" action="{{ url_for('usuario_salvar') }}" style="margin-bottom:12px">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="campo cresce"><label for="email">E-mail</label>
+    <input type="email" id="email" name="email" value="{{ form.email or '' }}" required maxlength="120"></div>
+  <div class="campo cresce"><label for="nome">Nome (opcional)</label>
+    <input type="text" id="nome" name="nome" value="{{ form.nome or '' }}" maxlength="120"></div>
+  <div class="campo"><label for="perfil">Perfil</label>
+    <select id="perfil" name="perfil">
+      {% for p in perfis %}<option value="{{ p }}" {{ 'selected' if (form.perfil or 'operador') == p }}>{{ p | perfil }}</option>{% endfor %}
+    </select></div>
+  <div class="campo"><label for="senha">Senha inicial</label>
+    <input type="password" id="senha" name="senha" required minlength="{{ senha_minima }}" autocomplete="new-password"
+           placeholder="mín. {{ senha_minima }} caracteres"></div>
+  <button class="btn" type="submit">Cadastrar pessoa</button>
+</form>
+
+<div class="tabela-wrap"><table>
+  <thead><tr><th>E-mail</th><th>Nome, perfil e senha</th><th></th></tr></thead>
+  <tbody>
+  {% for u in usuarios %}
+    <tr>
+      <td>{{ u.email }}{% if u.email == usuario.email %} <span class="dica">(você)</span>{% endif %}</td>
+      <td>
+        <form class="filtros" method="post" action="{{ url_for('usuario_salvar') }}">
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="id" value="{{ u.id }}">
+          <input type="hidden" name="email" value="{{ u.email }}">
+          <input type="text" name="nome" value="{{ u.nome or '' }}" placeholder="Nome" maxlength="120" aria-label="Nome" style="max-width:220px">
+          <select name="perfil" aria-label="Perfil" style="max-width:160px">
+            {% for p in perfis %}<option value="{{ p }}" {{ 'selected' if u.perfil == p }}>{{ p | perfil }}</option>{% endfor %}
+          </select>
+          <input type="password" name="senha" placeholder="{{ 'Nova senha (opcional)' if u.tem_senha else 'Definir senha' }}"
+                 minlength="{{ senha_minima }}" autocomplete="new-password" aria-label="Nova senha" style="max-width:190px">
+          <button class="btn sec pequeno" type="submit">Salvar</button>
+        </form>
+      </td>
+      <td class="acoes">
+        <form method="post" action="{{ url_for('usuario_remover', usuario_id=u.id) }}"
+              data-confirma="Remover o acesso de {{ u.email }}? A pessoa sai do sistema na hora; o histórico do que ela fez permanece.">
+          {% if not u.tem_senha %}<span class="dica">sem senha: não consegue entrar</span>{% endif %}
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <button class="btn perigo pequeno" type="submit">Remover acesso</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<div class="card" style="margin-top:12px">
+  <h2>O que cada perfil pode fazer</h2>
+  {% for p in perfis %}
+    <p><span class="perfil-tag perfil-{{ p }}">{{ p | perfil }}</span> {{ descricoes[p] }}</p>
+  {% endfor %}
+</div>
+{% endblock %}
